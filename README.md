@@ -7,6 +7,7 @@ This is my attempt to clean up and reuse this code. Focus will be:
  * attempt to break support with windows support ;-)
  * whatever else I can come up with
 
+(original readme quoted verbatim below)
 ~~~
 Copyright (C) 2002-2007 Python Software Foundation; All Rights Reserved
 
