@@ -4,7 +4,7 @@ This is my attempt to clean up and reuse this code. Focus will be:
  * use databases from the 21st century
  * update deps to modern equivalents (pydns is obolete)
  * remove GUI crap and make it a pure library
- * attempt to break support with windows support ;-)
+ * attempt to break support with windows ;-)
  * whatever else I can come up with
 
 (original readme quoted verbatim below)
