@@ -1,22 +1,19 @@
-import sys
 from collections import namedtuple
 
 from pymongo import MongoClient
 
-from .Options import options
-from .classifier import Classifier
+from . import classifier
 
-class WordInfo(namedtuple("WordInfo", ("spamcount", "hamcount"))):
-    def __new__(_cls, spamcount, hamcount, *args):
-        """Create a new instance of WordInfo(spamcount, hamcount)"""
-        return _tuple.__new__(_cls, (spamcount, hamcount))
 
-class MongoClassifierState(namedtuple("MongoClassifierState", ("wordinfo", "nspam", "nham"))):
-    def __new__(_cls, wordinfo, nspam, nham, *args):
-        """Create a new instance of MongoClassifierState(wordinfo, nspam, nham)"""
-        return _tuple.__new__(_cls, (wordinfo, nspam, nham))
+class WordInfo(dict):
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
 
-class MongoClassifier(object, Classifier):
+class MongoClassifierState(WordInfo):
+    pass
+
+class MongoClassifier(object, classifier.Classifier):
     """Classifier with state persisted in MongoDB."""
 
     STATE_COLLECTION = "save_state"
@@ -31,7 +28,7 @@ class MongoClassifier(object, Classifier):
 
     def load(self):
         try:
-            self.db = pymongo.MongoClient(self.db_url)[self.db_name]
+            self.db = MongoClient(self.db_url)[self.db_name]
         except:
             import pdb; pdb.set_trace()
 
@@ -47,7 +44,7 @@ class MongoClassifier(object, Classifier):
             self.wordinfo = {}
             self.nham = 0
             self.nspam = 0
-            self.db.create_collection(self.collection_names)
+            self.db.create_collection(self.collection_name)
             self.db[self.STATE_COLLECTION].insert(
                 {"collection": self.collection_name,
                  "wordinfo": self.wordinfo,
@@ -71,14 +68,11 @@ class MongoClassifier(object, Classifier):
         return self.db[self.collection_name].find_one({"word": word}) is not None
 
     def _wordinfoget(self, word):
-        if isinstance(word, unicode):
-            word = word.encode("utf-8")
-
         row = self._get_row(word, retclass=WordInfo)
         if row is not None:
             return row
         else:
-            return WordInfo(0, 0)
+            return WordInfo(word=word, nspam=0, nham=0)
 
     def _wordinfoset(self, word, record):
         if isinstance(word, unicode):
