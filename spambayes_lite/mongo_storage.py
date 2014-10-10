@@ -21,7 +21,7 @@ class MongoClassifier(object, classifier.Classifier):
     def __init__(self, db_url="mongodb://localhost", db_name="spambayes_lite",
                  collection_name="spambayes"):
         classifier.Classifier.__init__(self)
-        self.collection_name = collection_name
+        self.collection_name = collection_name.replace("-", "_")
         self.db_name = db_name
         self.db_url = db_url
         self.load()
@@ -50,7 +50,10 @@ class MongoClassifier(object, classifier.Classifier):
                  "wordinfo": self.wordinfo,
                  "nspam": self.nspam,
                  "nham": self.nham})
+        self.db[self.collection_name].ensure_index("word")
 
+    def close(self):
+        pass
 
     def _get_row(self, word, retclass=dict):
         return self.db[self.collection_name].find_one(
@@ -88,6 +91,10 @@ class MongoClassifier(object, classifier.Classifier):
         return [r["word"] for r in self.db[self.collection_name].find()
                 if "word" in r]
 
+    def _set_save_state(self, state):
+        self.db[self.STATE_COLLECTION].insert(
+            {"collection": self.collection_name,
+             "wordinfo": state.wordinfo,
+             "nspam": state.nspam,
+             "nham": state.nham})
 
-    def close(self):
-        pass
