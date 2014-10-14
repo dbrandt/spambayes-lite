@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 from pymongo import MongoClient
-
 from . import classifier
 
 
@@ -9,6 +8,10 @@ class WordInfo(dict):
     def __getattr__(self, name):
         if name in self:
             return self[name]
+        elif name == "spamcount":
+            return self["nspam"]
+        elif name == "hamcount":
+            return self["nham"]
 
 class MongoClassifierState(WordInfo):
     pass
@@ -36,9 +39,9 @@ class MongoClassifier(object, classifier.Classifier):
         state = self.db[self.STATE_COLLECTION].find_one(
             {"collection": self.collection_name}, as_class=MongoClassifierState)
         if state is not None:
-            self.wordinfo = state.wordinfo
-            self.nham = state.nham
-            self.nspam = state.nspam
+            self.wordinfo = state.wordinfo or {}
+            self.nham = state.nham or 0
+            self.nspam = state.nspam or 0
         else:
             # Collection of this type does not exist.
             self.wordinfo = {}
@@ -48,12 +51,17 @@ class MongoClassifier(object, classifier.Classifier):
             self.db[self.STATE_COLLECTION].insert(
                 {"collection": self.collection_name,
                  "wordinfo": self.wordinfo,
-                 "nspam": self.nspam,
-                 "nham": self.nham})
+                 "spamcount": self.nspam,
+                 "hamcount": self.nham})
         self.db[self.collection_name].ensure_index("word")
 
     def close(self):
         pass
+
+    def _copy_from_base(self, base_collection):
+        if base_collection in self.db.collection_names():
+            for row in self.db[base_collection].find():
+                self.db[self.collection_name].insert(row)
 
     def _get_row(self, word, retclass=dict):
         return self.db[self.collection_name].find_one(
@@ -71,11 +79,11 @@ class MongoClassifier(object, classifier.Classifier):
         return self.db[self.collection_name].find_one({"word": word}) is not None
 
     def _wordinfoget(self, word):
-        row = self._get_row(word, retclass=WordInfo)
+        row = self._get_row(word)
         if row is not None:
-            return row
-        else:
-            return WordInfo(word=word, nspam=0, nham=0)
+            wi = classifier.WordInfo()
+            wi.__setstate__((row["nspam"], row["nham"]))
+            return wi
 
     def _wordinfoset(self, word, record):
         if isinstance(word, unicode):
