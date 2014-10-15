@@ -3,19 +3,6 @@ from collections import namedtuple
 from pymongo import MongoClient
 from . import classifier
 
-
-class WordInfo(dict):
-    def __getattr__(self, name):
-        if name in self:
-            return self[name]
-        elif name == "spamcount":
-            return self["nspam"]
-        elif name == "hamcount":
-            return self["nham"]
-
-class MongoClassifierState(WordInfo):
-    pass
-
 class MongoClassifier(object, classifier.Classifier):
     """Classifier with state persisted in MongoDB."""
 
@@ -24,7 +11,7 @@ class MongoClassifier(object, classifier.Classifier):
     def __init__(self, db_url="mongodb://localhost", db_name="spambayes_lite",
                  collection_name="spambayes"):
         classifier.Classifier.__init__(self)
-        self.collection_name = collection_name.replace("-", "_")
+        self.collection_name = collection_name
         self.db_name = db_name
         self.db_url = db_url
         self.load()
@@ -37,11 +24,11 @@ class MongoClassifier(object, classifier.Classifier):
 
 
         state = self.db[self.STATE_COLLECTION].find_one(
-            {"collection": self.collection_name}, as_class=MongoClassifierState)
+            {"collection": self.collection_name})
         if state is not None:
-            self.wordinfo = state.wordinfo or {}
-            self.nham = state.nham or 0
-            self.nspam = state.nspam or 0
+            self.wordinfo = state.get("wordinfo", {})
+            self.nham = state.get("nham", 0)
+            self.nspam = state.get("nspam", 0)
         else:
             # Collection of this type does not exist.
             self.wordinfo = {}
@@ -51,17 +38,28 @@ class MongoClassifier(object, classifier.Classifier):
             self.db[self.STATE_COLLECTION].insert(
                 {"collection": self.collection_name,
                  "wordinfo": self.wordinfo,
-                 "spamcount": self.nspam,
-                 "hamcount": self.nham})
+                 "nspam": self.nspam,
+                 "nham": self.nham})
         self.db[self.collection_name].ensure_index("word")
 
+    def __repr__(self):
+        return ("MongoClassifier(url=%s, db=%s, collection=%s, nham=%d, nspam=%d)" %
+                (self.db_url, self.db_name, self.collection_name, self.nham, self.nspam))
+
     def close(self):
+        pass
+
+    def store(self):
         pass
 
     def _copy_from_base(self, base_collection):
         if base_collection in self.db.collection_names():
             for row in self.db[base_collection].find():
                 self.db[self.collection_name].insert(row)
+            state = self.db[self.STATE_COLLECTION].find_one(
+                {"collection": base_collection}) or {}
+            state = (state.get("wordinfo", {}), state.get("nham", 0), state.get("nspam", 0))
+            self._set_save_state(state)
 
     def _get_row(self, word, retclass=dict):
         return self.db[self.collection_name].find_one(
@@ -104,7 +102,9 @@ class MongoClassifier(object, classifier.Classifier):
             {"collection": self.collection_name},
             {"$set":
              {"collection": self.collection_name,
-              "wordinfo": state.wordinfo,
-              "spamcount": state.spamcount,
-              "hamcount": state.hamcount}}, upsert=True)
-
+              "wordinfo": state[0],
+              "nspam": state[1],
+              "nham": state[2]}}, upsert=True)
+        self.wordinfo = state[0]
+        self.nspam = state[1]
+        self.nham = state[2]
