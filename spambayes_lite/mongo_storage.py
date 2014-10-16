@@ -47,10 +47,7 @@ class MongoClassifier(object, classifier.Classifier):
                 (self.db_url, self.db_name, self.collection_name, self.nham, self.nspam))
 
     def close(self):
-        pass
-
-    def store(self):
-        pass
+        self._set_save_state((self.wordinfo, self.nspam, self.nham))
 
     def _copy_from_base(self, base_collection):
         if base_collection in self.db.collection_names():
@@ -58,7 +55,7 @@ class MongoClassifier(object, classifier.Classifier):
                 self.db[self.collection_name].insert(row)
             state = self.db[self.STATE_COLLECTION].find_one(
                 {"collection": base_collection}) or {}
-            state = (state.get("wordinfo", {}), state.get("nham", 0), state.get("nspam", 0))
+            state = (state.get("wordinfo", {}), state.get("nspam", 0), state.get("nham", 0))
             self._set_save_state(state)
 
     def _get_row(self, word, retclass=dict):
