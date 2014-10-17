@@ -3,10 +3,58 @@ from collections import namedtuple
 from pymongo import MongoClient
 from . import classifier
 
+
+STATE_COLLECTION = "save_state"
+
+def copy_collection_js(**kwargs):
+    return ("""db["%(old)s"].find().forEach(
+    function (doc) {
+      db["%(new)s"].update({_id: doc._id}, doc, true);
+    })""" % kwargs)
+
+def copy_collection(db, source, target, drop_source=False):
+    """Copies a collection with server-side javascript. This is about twice
+    as fast as roundtripping python in a forloop. Downside is possible locking.
+    Meta data about the state of the collection is also updated.
+    If source collection should be deleted after copy, set drop_source = True."""
+    db.eval(copy_collection_js(old=source, new=target))
+    source_state = db[STATE_COLLECTION].find_one({"collection": source})
+    source_state.pop("_id")
+    source_state.pop("collection")
+    db[STATE_COLLECTION].update({"collection": target}, {
+        "collection": target,
+        "nham": source_state.get("nham", 0),
+        "nspam": source_state.get("nspam", 0),
+        "wordinfo": source_state.get("wordinfo", {})}, True)
+    if drop_source:
+        db[STATE_COLLECTION].remove({"collection": source})
+        db[source].drop()
+
+def move_collection(db, source, target):
+    copy_collection(db, source, target, drop_source=True)
+
+
+def replace_collection(db, collection, rebuild):
+    """Rotate in new collection generated from rebuild script."""
+    # 0. Truncate _old
+    # 1. Copy old database to <n>_old
+    # 2. truncate original collection
+    # 3. Copy rebuild collection to original collection
+    # 4. Drop rebEuild collection
+    # Drop old backup.
+    backup = "%s_old" % (collection,)
+    if backup in db.collection_names():
+        db[backup].drop()
+    copy_collection(db, collection, backup)
+    if not db[collection].count() == db[backup].count():
+        # Bad heuristics, but it's better than nothing.
+        raise RuntimeError("collection backup failed for %s (%s)" %
+                           (collection, backup))
+        move_collection(db, rebuild, collection_name)
+
+
 class MongoClassifier(object, classifier.Classifier):
     """Classifier with state persisted in MongoDB."""
-
-    STATE_COLLECTION = "save_state"
 
     def __init__(self, db_url="mongodb://localhost", db_name="spambayes_lite",
                  collection_name="spambayes"):
@@ -23,7 +71,7 @@ class MongoClassifier(object, classifier.Classifier):
             import pdb; pdb.set_trace()
 
 
-        state = self.db[self.STATE_COLLECTION].find_one(
+        state = self.db[STATE_COLLECTION].find_one(
             {"collection": self.collection_name})
         if state is not None:
             self.wordinfo = state.get("wordinfo", {})
@@ -35,7 +83,7 @@ class MongoClassifier(object, classifier.Classifier):
             self.nham = 0
             self.nspam = 0
             self.db.create_collection(self.collection_name)
-            self.db[self.STATE_COLLECTION].insert(
+            self.db[STATE_COLLECTION].insert(
                 {"collection": self.collection_name,
                  "wordinfo": self.wordinfo,
                  "nspam": self.nspam,
@@ -49,11 +97,11 @@ class MongoClassifier(object, classifier.Classifier):
     def close(self):
         self._set_save_state((self.wordinfo, self.nspam, self.nham))
 
+
     def _copy_from_base(self, base_collection):
         if base_collection in self.db.collection_names():
-            for row in self.db[base_collection].find():
-                self.db[self.collection_name].insert(row)
-            state = self.db[self.STATE_COLLECTION].find_one(
+            self.db.eval(copy_collection_js(new=self.collection_name, old=base_collection))
+            state = self.db[STATE_COLLECTION].find_one(
                 {"collection": base_collection}) or {}
             state = (state.get("wordinfo", {}), state.get("nspam", 0), state.get("nham", 0))
             self._set_save_state(state)
@@ -95,7 +143,7 @@ class MongoClassifier(object, classifier.Classifier):
                 if "word" in r]
 
     def _set_save_state(self, state):
-        self.db[self.STATE_COLLECTION].update(
+        self.db[STATE_COLLECTION].update(
             {"collection": self.collection_name},
             {"$set":
              {"collection": self.collection_name,
