@@ -19,14 +19,13 @@ def copy_collection(db, source, target, drop_source=False):
     If source collection should be deleted after copy, set drop_source = True."""
     db.eval(copy_collection_js(old=source, new=target))
     source_state = db[STATE_COLLECTION].find_one({"collection": source})
-    source_state.pop("_id")
-    source_state.pop("collection")
     db[STATE_COLLECTION].update({"collection": target}, {
         "collection": target,
         "nham": source_state.get("nham", 0),
         "nspam": source_state.get("nspam", 0),
         "wordinfo": source_state.get("wordinfo", {})}, True)
     if drop_source:
+        print "Dropping %s after copy" % (source,)
         db[STATE_COLLECTION].remove({"collection": source})
         db[source].drop()
 
@@ -36,12 +35,6 @@ def move_collection(db, source, target):
 
 def replace_collection(db, collection, rebuild):
     """Rotate in new collection generated from rebuild script."""
-    # 0. Truncate _old
-    # 1. Copy old database to <n>_old
-    # 2. truncate original collection
-    # 3. Copy rebuild collection to original collection
-    # 4. Drop rebEuild collection
-    # Drop old backup.
     backup = "%s_old" % (collection,)
     if backup in db.collection_names():
         db[backup].drop()
@@ -50,7 +43,9 @@ def replace_collection(db, collection, rebuild):
         # Bad heuristics, but it's better than nothing.
         raise RuntimeError("collection backup failed for %s (%s)" %
                            (collection, backup))
-        move_collection(db, rebuild, collection_name)
+    # Truncate target collection
+    db[collection].remove()
+    move_collection(db, rebuild, collection)
 
 
 class MongoClassifier(object, classifier.Classifier):
