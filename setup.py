@@ -4,21 +4,20 @@ import os
 
 from spambayes_lite import __version__
 
-
 readme_fname = os.path.join(os.path.dirname(__file__), "README.rst")
 readme_text = open(readme_fname).read()
 
-
 setup(
-    name='spambayes_lite',
+    name='spambayes-lite',
     version = __version__,
-    description = "Bare-bones spam classification system based on a modified version of SpamBayes.",
-    author = "the spambayes project, Daniel Brandt",
-    author_email = "spambayes@python.org, me@dbrandt.se",
-    url = "http://spambayes.sourceforge.net",
+    description = "Bare-bones spam classification library based on a modified version of SpamBayes.",
+    author = "Daniel Brandt",
+    author_email = "me@dbrandt.se",
+    url = "https://github.com/dbrandt/spambayes-lite",
     install_requires=["lockfile", "dnspython", "pymongo"],
-
+    long_description=readme_text,
     packages=find_packages(),
+    licence="PSFL",
     classifiers = [
         "Development Status :: 4 - Beta"
         "License :: OSI Approved :: Python Software Foundation License",
