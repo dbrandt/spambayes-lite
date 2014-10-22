@@ -9,4 +9,6 @@ This is an attempt to clean up and reuse `SpamBayes <http://spambayes.sourceforg
 
 Make sure you check the TODO for planned changes before you replace SpamBayes with this as ALL UI-code will be removed eventually.
 
-See spambayes_README.rst for more on SpamBayes.
+See http://spambayes.sourceforge.net for more on SpamBayes.
+
+(I am not affiliated with the SpamBayes developers in any way).
