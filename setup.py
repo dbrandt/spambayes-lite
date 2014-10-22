@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
+import os
 
 from spambayes_lite import __version__
+
+
+readme_fname = os.path.join(os.path.dirname(__file__), "README.rst")
+readme_text = open(readme_fname).read()
 
 
 setup(
@@ -11,25 +16,18 @@ setup(
     author = "the spambayes project, Daniel Brandt",
     author_email = "spambayes@python.org, me@dbrandt.se",
     url = "http://spambayes.sourceforge.net",
-    install_requires=["lockfile", "dnspython"],
+    install_requires=["lockfile", "dnspython", "pymongo"],
 
     packages=find_packages(),
-    # classifiers = [
-    #     'Development Status :: 5 - Production/Stable',
-    #     'Environment :: Console',
-    #     'Environment :: Plugins',
-    #     'Environment :: Win32 (MS Windows)',
-    #     'License :: OSI Approved :: Python Software Foundation License',
-    #     'Operating System :: POSIX',
-    #     'Operating System :: MacOS :: MacOS X',
-    #     'Operating System :: Microsoft :: Windows :: Windows 95/98/2000',
-    #     'Operating System :: Microsoft :: Windows :: Windows NT/2000',
-    #     'Natural Language :: English',
-    #     'Programming Language :: Python',
-    #     'Programming Language :: C',
-    #     'Intended Audience :: End Users/Desktop',
-    #     'Topic :: Communications :: Email :: Filters',
-    #     'Topic :: Communications :: Email :: Post-Office :: POP3',
-    #     'Topic :: Communications :: Email :: Post-Office :: IMAP',
-    #     ],
+    classifiers = [
+        "Development Status :: 4 - Beta"
+        "License :: OSI Approved :: Python Software Foundation License",
+        "Operating System :: POSIX",
+        "Operating System :: MacOS :: MacOS X",
+        "Natural Language :: English",
+        "Programming Language :: Python",
+        "Intended Audience :: Developers",
+        "Topic :: Software Development :: Libraries"
+        "Topic :: Text Processing :: Filters"
+        ],
     )
