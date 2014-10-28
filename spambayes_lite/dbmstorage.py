@@ -1,6 +1,6 @@
 """Wrapper to open an appropriate dbm storage type."""
 
-from spambayes.Options import options
+from spambayes_lite.Options import options
 import sys
 import whichdb
 import os
@@ -16,12 +16,12 @@ def open_db3hash(*args):
 def open_dbhash(*args):
     """Open a bsddb hash.  Don't use this on Windows, unless Python 2.3 or
     greater is used, in which case bsddb3 is actually named bsddb."""
-    from spambayes.port import bsddb
+    from spambayes_lite.port import bsddb
     return bsddb.hashopen(*args)
 
 def open_gdbm(*args):
     """Open a gdbm database."""
-    from spambayes.port import gdbm
+    from spambayes_lite.port import gdbm
     if gdbm is not None:
         return gdbm.open(*args)
     raise ImportError("gdbm not available")

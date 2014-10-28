@@ -15,14 +15,14 @@ import binascii
 import urlparse
 import urllib
 
-from spambayes import classifier
-from spambayes.Options import options
+from spambayes_lite import classifier
+from spambayes_lite.Options import options
 
-from spambayes.mboxutils import get_message
+from spambayes_lite.mboxutils import get_message
 
 try:
-    from spambayes.dnscache import NSCache
-    cache = dnscache.NSCache()
+    from spambayes_lite.dnscache import NSCache
+    cache = NSCache()
     cache.printStatsAtEnd = False
 except (IOError, ImportError):
     class cache:

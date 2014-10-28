@@ -27,7 +27,7 @@ except NameError:
 __all__ = ['options', '_']
 
 # Grab the stuff from the core options class.
-from spambayes.OptionsClass import *
+from spambayes_lite.OptionsClass import *
 
 # A little magic.  We'd like to use ZODB as the default storage,
 # because we've had so many problems with bsddb, and we'd like to swap
@@ -1184,7 +1184,7 @@ defaults = {
      be moved.  However, if you wish to have ham messages moved, you can
      select a folder here."""),
      IMAP_FOLDER, DO_NOT_RESTORE),
-    
+
     ("ham_train_folders", _("Folders with mail to be trained as ham"), (),
      _("""Comma delimited list of folders that will be examined for messages
      to train as ham."""),
