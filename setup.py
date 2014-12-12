@@ -10,7 +10,7 @@ m = imp.load_module("sbl", *m_info)
 readme_fname = os.path.join(os.path.dirname(__file__), "README.rst")
 readme_text = open(readme_fname).read()
 
-install_requires = ["lockfile", "pymongo"]
+install_requires = ["lockfile", "pymongo", "six"]
 if sys.version_info[0] == 3:
     install_requires.append("dnspython3")
 else:
