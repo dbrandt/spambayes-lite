@@ -184,6 +184,8 @@ self-closing.  `textarea` is the only such tag by default.
 _PyMeldLite.py_ is released under the terms of the Python Software Foundation
 License - see http://www.python.org/
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 # PyMeldLite is released under the terms of the Python Software Foundation
 # License - see http://www.python.org/  It is a restricted version of PyMeld;
@@ -317,7 +319,7 @@ class _ElementNode(_Node):
         for attribute, value in attributes:
             text.append(' %s="%s"' % (attribute, value))
         childText = self.childrenToText()
-        if childText or nonSelfClose.has_key(self.tag):
+        if childText or self.tag in nonSelfClose:
             text.append('>')
             text.append(childText)
             text.append('</%s>' % self.tag)
@@ -602,7 +604,7 @@ class Meld:
         elif isinstance(source, _Node): # For internal use only.
             self._tree = source
         else:
-            raise TypeError, "Melds must be constructed from ASCII strings"
+            raise TypeError("Melds must be constructed from ASCII strings")
 
     def _findByID(self, node, name):
         """Returns the node with the given ID, or None."""
@@ -693,14 +695,14 @@ class Meld:
             try:
                 return self.__dict__[name]
             except KeyError:
-                raise AttributeError, name
+                raise AttributeError(name)
         node = self._findByID(self._tree, name)
         if node:
             return Meld(node, self._readonly)
         attribute = self._tree.getElementNode().attributes.get(name, _fail)
         if attribute is not _fail:
             return self._unquoteAttribute(attribute)
-        raise AttributeError, "No element or attribute named %r" % name
+        raise AttributeError("No element or attribute named %r" % name)
 
     def __setattr__(self, name, value):
         """`object.<name> = value` sets the XML content of the element with an
@@ -721,7 +723,7 @@ class Meld:
             self.__dict__[name] = value
             return
         if self._readonly:
-            raise ReadOnlyError, READ_ONLY_MESSAGE
+            raise ReadOnlyError(READ_ONLY_MESSAGE)
         node = self._findByID(self._tree, name)
         if hasattr(value, '_tree') and value._tree is node:
             return   # x.y = x.y
@@ -751,9 +753,9 @@ class Meld:
                 del self.__dict__[name]
                 return
             except KeyError:
-                raise AttributeError, name
+                raise AttributeError(name)
         if self._readonly:
-            raise ReadOnlyError, READ_ONLY_MESSAGE
+            raise ReadOnlyError(READ_ONLY_MESSAGE)
         node = self._findByID(self._tree, name)
         if node:
             node.parent.children.remove(node)
@@ -763,7 +765,7 @@ class Meld:
         if attribute is not _fail:
             del node.attributes[name]
         else:
-            raise AttributeError, "No element or attribute named %r" % name
+            raise AttributeError("No element or attribute named %r" % name)
 
     def __getitem__(self, name):
         """`object[<name>]`, if this Meld contains an element with an `id`
@@ -781,7 +783,7 @@ class Meld:
         node = self._findByID(self._tree, name)
         if node:
             return Meld(node, self._readonly)
-        raise KeyError, "No element named %r" % name
+        raise KeyError("No element named %r" % name)
 
     def __setitem__(self, name, value):
         """`object[<name>] = value` sets the XML content of the element with an
@@ -798,14 +800,14 @@ class Meld:
         """
 
         if self._readonly:
-            raise ReadOnlyError, READ_ONLY_MESSAGE
+            raise ReadOnlyError(READ_ONLY_MESSAGE)
         node = self._findByID(self._tree, name)
         if hasattr(value, '_tree') and value._tree is node:
             return   # x["y"] = x.y
         if node:
             self._replaceNodeContent(node, value)
             return
-        raise KeyError, "No element named %r" % name
+        raise KeyError("No element named %r" % name)
 
     def __delitem__(self, name):
         """Deletes the named element from the `Meld`:
@@ -817,12 +819,12 @@ class Meld:
         """
 
         if self._readonly:
-            raise ReadOnlyError, READ_ONLY_MESSAGE
+            raise ReadOnlyError(READ_ONLY_MESSAGE)
         node = self._findByID(self._tree, name)
         if node:
             node.parent.children.remove(node)
             return
-        raise KeyError, "No element named %r" % name
+        raise KeyError("No element named %r" % name)
 
     def __iadd__(self, other):
         """`object1 += object2` appends a string or a clone of a Meld to
@@ -831,7 +833,7 @@ class Meld:
         rows).  See *Real-world example* in the main documentation."""
 
         if self._readonly:
-            raise ReadOnlyError, READ_ONLY_MESSAGE
+            raise ReadOnlyError(READ_ONLY_MESSAGE)
         if isinstance(other, Meld):
             nodes = [other._tree.getElementNode().clone()]
         else:
@@ -922,17 +924,17 @@ class Meld:
             sequence.reverse()
             while stack and sequence:
                 element = stack.pop()
-                if element.attributes.has_key('id'):
+                if 'id' in element.attributes:
                     self._replaceNodeContent(element, sequence.pop())
                 else:
                     for index in range(len(element.children)):
                         stack.append(element.children[-1 - index])
 
             if sequence:
-                raise TypeError, "not all arguments converted"
+                raise TypeError("not all arguments converted")
             while stack:
-                if stack.pop().attributes.has_key('id'):
-                    raise TypeError, "not enough arguments"
+                if 'id' in stack.pop().attributes:
+                    raise TypeError("not enough arguments")
 
         return returnObject
 
@@ -1223,7 +1225,7 @@ def test():
     except ImportError:
         Coverage = False
 
-    import PyMeldLite
+    from . import PyMeldLite
     result = doctest.testmod(PyMeldLite)
 
     if Coverage:
@@ -1234,4 +1236,4 @@ def test():
 if __name__ == '__main__':
     failed, total = test()
     if failed == 0:     # Else `doctest.testmod` prints the failures.
-        print "All %d tests passed." % total
+        print("All %d tests passed." % total)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from collections import namedtuple
 
 from pymongo import MongoClient
@@ -25,7 +26,7 @@ def copy_collection(db, source, target, drop_source=False):
         "nspam": source_state.get("nspam", 0),
         "wordinfo": source_state.get("wordinfo", {})}, True)
     if drop_source:
-        print "Dropping %s after copy" % (source,)
+        print("Dropping %s after copy" % (source,))
         db[STATE_COLLECTION].remove({"collection": source})
         db[source].drop()
 

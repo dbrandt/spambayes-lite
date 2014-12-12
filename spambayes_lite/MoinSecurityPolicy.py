@@ -143,7 +143,7 @@ class SecurityPolicy(Permissions):
                            action="SAVE/REVERT",
                            extra=revstr)
             pg.clean_acl_cache()
-        except pg.SaveError, msg:
+        except pg.SaveError as msg:
             pass
         # msg contain a unicode string
         savemsg = unicode(msg)

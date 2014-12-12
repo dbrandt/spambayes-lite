@@ -27,6 +27,7 @@ To do:
    spambayes id) could also be done.
  o Suggestions?
 """
+from __future__ import absolute_import
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
@@ -169,10 +170,10 @@ class IMAPUserInterface(UserInterface.UserInterface):
         """Called by the config page when the user saves some new options, or
         restores the defaults."""
         # Re-read the options.
-        import Options
+        from . import Options
         Options.load_options()
         global options
-        from Options import options
+        from .Options import options
         self.change_db()
 
     def onSave(self, how):
@@ -267,7 +268,7 @@ class IMAPUserInterface(UserInterface.UserInterface):
                                      _("Please check username/password details."))
             self.write(content)
             return None
-        except LoginFailure, e:
+        except LoginFailure as e:
             content = self._buildBox(_("Error"), None, str(e))
             self.write(content)
             return None
@@ -319,7 +320,7 @@ class IMAPUserInterface(UserInterface.UserInterface):
                     opt = opt[:-len(value)]
                 self.parm_ini_map += ("imap", opt),
                 key = "imap_" + opt
-                if parms.has_key(key):
+                if key in parms:
                     parms[key] += ',' + value
                 else:
                     parms[key] = value

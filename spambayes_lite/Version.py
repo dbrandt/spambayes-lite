@@ -9,6 +9,7 @@ is a later version available.
 The makefile process for the website will execute this as a script, which
 will generate the "ConfigParser" version for the web.
 """
+from __future__ import print_function
 
 import sys
 import re
@@ -174,7 +175,7 @@ class SBVersion:
     def parse(self, vstring):
         match = self.version_re.match(vstring)
         if not match:
-            raise ValueError, "invalid version number '%s'" % vstring
+            raise ValueError("invalid version number '%s'" % vstring)
 
         (major, minor, patch, prerelease, prerelease_num) = \
             match.group(1, 2, 4, 6, 7)
@@ -240,8 +241,7 @@ except AttributeError: # No SafeConfigParser!
 
 def fetch_latest_dict(url=LATEST_VERSION_HOME):
     if MySafeConfigParser is None:
-        raise RuntimeError, \
-              "Sorry, but only Python 2.3+ can trust remote config files"
+        raise RuntimeError("Sorry, but only Python 2.3+ can trust remote config files")
 
     import urllib2
     from spambayes.Options import options
@@ -304,7 +304,7 @@ def _write_cfg_opts(stream, this_dict):
         elif type(val)==type({}):
             val_str = None # sub-dict
         else:
-            print "Skipping unknown value type: %r" % val
+            print("Skipping unknown value type: %r" % val)
             val_str = None
         if val_str is not None:
             stream.write("%s:%s\n" % (name, val_str))
@@ -355,21 +355,21 @@ def main(args):
         sys.exit(0)
         
     v_this = get_current_version()
-    print "Current version:", v_this.get_long_version()
+    print("Current version:", v_this.get_long_version())
 
-    print
-    print "Fetching the lastest version information..."
+    print()
+    print("Fetching the lastest version information...")
     try:
         latest_dict = fetch_latest_dict()
     except:
-        print "FAILED to fetch the latest version"
+        print("FAILED to fetch the latest version")
         import traceback
         traceback.print_exc()
         sys.exit(1)
 
     v_latest = get_version(version_dict=latest_dict)
-    print
-    print "Latest version:", v_latest.get_long_version()
+    print()
+    print("Latest version:", v_latest.get_long_version())
 
 if __name__ == '__main__':
     main(sys.argv)

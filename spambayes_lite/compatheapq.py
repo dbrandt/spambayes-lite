@@ -29,6 +29,7 @@ These two make it possible to view the heap as a regular Python list
 without surprises: heap[0] is the smallest item, and heap.sort()
 maintains the heap invariant!
 """
+from __future__ import print_function
 
 # Original code by Kevin O'Connor, augmented by Tim Peters
 
@@ -250,4 +251,4 @@ if __name__ == "__main__":
     sort = []
     while heap:
         sort.append(heappop(heap))
-    print sort
+    print(sort)

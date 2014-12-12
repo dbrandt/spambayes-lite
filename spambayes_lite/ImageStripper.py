@@ -3,6 +3,7 @@ This is the place where we try and discover information buried in images.
 """
 
 from __future__ import division
+from __future__ import print_function
 
 import sys
 import os
@@ -44,9 +45,9 @@ def is_executable(prog):
     if sys.platform == "win32":
         return True
     info = os.stat(prog)
-    return (info.st_uid == os.getuid() and (info.st_mode & 0100) or
-            info.st_gid == os.getgid() and (info.st_mode & 0010) or
-            info.st_mode & 0001)
+    return (info.st_uid == os.getuid() and (info.st_mode & 0o100) or
+            info.st_gid == os.getgid() and (info.st_mode & 0o010) or
+            info.st_mode & 0o001)
 
 def find_program(prog):
     path = os.environ.get("PATH", "").split(os.pathsep)
@@ -230,7 +231,7 @@ class OCRExecutableEngine(OCREngine):
     program = property(get_program)
 
     def get_command_line(self, pnmfile):
-        raise NotImplementedError, "base classes must override"
+        raise NotImplementedError("base classes must override")
 
     def extract_text(self, pnmfile):
         # Generically reads output from stdout.
@@ -240,7 +241,7 @@ class OCRExecutableEngine(OCREngine):
         ret = ocr.read()
         exit_code = ocr.close()
         if exit_code:
-            raise SystemError, ("%s failed with exit code %s" %
+            raise SystemError("%s failed with exit code %s" %
                                 (self.engine_name, exit_code))
         return ret
 
@@ -310,8 +311,8 @@ class ImageStripper:
                 if self.engine.program:
                     try:
                         ctext = self.engine.extract_text(pnmfile).lower()
-                    except SystemError, msg:
-                        print >> sys.stderr, msg
+                    except SystemError as msg:
+                        print(msg, file=sys.stderr)
                         preserve = True
                         ctext = ""
                 else:
@@ -319,9 +320,8 @@ class ImageStripper:
                     # is enabled and we have no program, its OK to spew lots
                     # of warnings - they should either disable OCR (it is by
                     # default), or fix their config.
-                    print >> sys.stderr, \
-                          "No OCR program '%s' available - can't get text!" \
-                          % (self.engine.engine_name,)
+                    print("No OCR program '%s' available - can't get text!" \
+                          % (self.engine.engine_name,), file=sys.stderr)
                     ctext = ""
                 ctokens = set()
                 if not ctext.strip():
@@ -350,8 +350,8 @@ class ImageStripper:
             self.engine = get_engine(engine_name)
         if self.engine is None:
             # We only get here if explicitly enabled - spewing msgs is ok.
-            print >> sys.stderr, "invalid engine name '%s' - OCR disabled" \
-                                 % (engine_name,)
+            print("invalid engine name '%s' - OCR disabled" \
+                                 % (engine_name,), file=sys.stderr)
             return "", set()
 
         if not parts:
@@ -371,12 +371,12 @@ class ImageStripper:
 
     def close(self):
         if options["globals", "verbose"]:
-            print >> sys.stderr, "saving", len(self.cache),
-            print >> sys.stderr, "items to", self.cachefile,
+            print("saving", len(self.cache), end=' ', file=sys.stderr)
+            print("items to", self.cachefile, end=' ', file=sys.stderr)
             if self.hits + self.misses:
-                print >> sys.stderr, "%.2f%% hit rate" % \
-                      (100 * self.hits / (self.hits + self.misses)),
-            print >> sys.stderr
+                print("%.2f%% hit rate" % \
+                      (100 * self.hits / (self.hits + self.misses)), end=' ', file=sys.stderr)
+            print(file=sys.stderr)
         pickle_write(self.cachefile, self.cache)
 
 _cachefile = options["Tokenizer", "crack_image_cache"]

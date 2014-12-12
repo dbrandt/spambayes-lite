@@ -33,7 +33,7 @@ except (IOError, ImportError):
 
 # Patch encodings.aliases to recognize 'ansi_x3_4_1968'
 from encodings.aliases import aliases # The aliases dictionary
-if not aliases.has_key('ansi_x3_4_1968'):
+if 'ansi_x3_4_1968' not in aliases:
     aliases['ansi_x3_4_1968'] = 'ascii'
 del aliases # Not needed any more
 

@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+from __future__ import print_function
 import math
 
 from spambayes.Options import options
@@ -140,12 +141,12 @@ class Hist:
         n = self.n
         if n == 0:
             return
-        print "%d items; mean %.2f; sdev %.2f" % (n, self.mean, self.sdev)
-        print "-> <stat> min %g; median %g; max %g" % (self.min,
+        print("%d items; mean %.2f; sdev %.2f" % (n, self.mean, self.sdev))
+        print("-> <stat> min %g; median %g; max %g" % (self.min,
                                                        self.median,
-                                                       self.max)
+                                                       self.max))
         pcts = ['%g%% %g' % x for x in self.pct]
-        print "-> <stat> percentiles:", '; '.join(pcts)
+        print("-> <stat> percentiles:", '; '.join(pcts))
 
         lo, hi = self.get_lo_hi()
         if lo > hi:
@@ -158,7 +159,7 @@ class Hist:
         hunit, r = divmod(biggest, WIDTH)
         if r:
             hunit += 1
-        print "* =", hunit, "items"
+        print("* =", hunit, "items")
 
         # We need ndigits decimal digits to display the largest bucket count.
         ndigits = len(str(biggest))
@@ -179,5 +180,5 @@ class Hist:
         bucketwidth = self.get_bucketwidth()
         for i in range(nbuckets):
             n = self.buckets[i]
-            print format % (lo + i * bucketwidth, n),
-            print '*' * ((n + hunit - 1) // hunit)
+            print(format % (lo + i * bucketwidth, n), end=' ')
+            print('*' * ((n + hunit - 1) // hunit))

@@ -66,7 +66,7 @@ class reader:
                         field.append("\n")
                         line = self._readline()
                         if not line:
-                            raise IOError, "end-of-file during parsing"
+                            raise IOError("end-of-file during parsing")
             else:
                 # unquoted field
                 field = []
@@ -112,8 +112,8 @@ if __name__ == "__main__":
 ''')
             f.seek(0)
             rdr = reader(f)
-            self.assertEqual(rdr.next(), ['"rare"', '1', '0'])
-            self.assertEqual(rdr.next(),
+            self.assertEqual(next(rdr), ['"rare"', '1', '0'])
+            self.assertEqual(next(rdr),
                              ['beginning;\n\tend="itinhh.txt"','1', '0'])
             self.assertRaises(StopIteration, rdr.next)
 

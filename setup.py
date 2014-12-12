@@ -2,12 +2,19 @@
 from setuptools import setup, find_packages
 import imp
 import os
+import sys
 
 m_info = imp.find_module("spambayes_lite", [os.path.dirname(__file__)])
 m = imp.load_module("sbl", *m_info)
 
 readme_fname = os.path.join(os.path.dirname(__file__), "README.rst")
 readme_text = open(readme_fname).read()
+
+install_requires = ["lockfile", "pymongo"]
+if sys.version_info[0] == 3:
+    install_requires.append("dnspython3")
+else:
+    install_requires.append("dnspython3")
 
 setup(
     name='spambayes-lite',
@@ -16,7 +23,7 @@ setup(
     author = "Daniel Brandt",
     author_email = "me@dbrandt.se",
     url = "https://github.com/dbrandt/spambayes-lite",
-    install_requires=["lockfile", "dnspython", "pymongo"],
+    install_requires=install_requires,
     long_description=readme_text,
     packages=find_packages(),
     license="PSFL",

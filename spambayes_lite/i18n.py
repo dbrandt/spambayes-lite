@@ -7,6 +7,7 @@ Abstract:
 
 Manages the internationalisation (i18n) aspects of SpamBayes.
 """
+from __future__ import print_function
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
@@ -180,38 +181,38 @@ class LanguageManager:
 
 def test():
     lm = LanguageManager()
-    print "INIT: len(sys.path): ", len(sys.path)
-    print "TEST default lang"
+    print("INIT: len(sys.path): ", len(sys.path))
+    print("TEST default lang")
     lm.set_language(lm.locale_default_lang())
-    print "\tCurrent Languages: ", lm.current_langs_codes
-    print "\tlen(sys.path): ", len(sys.path)
-    print "\t", _("Help")
+    print("\tCurrent Languages: ", lm.current_langs_codes)
+    print("\tlen(sys.path): ", len(sys.path))
+    print("\t", _("Help"))
 
-    print "TEST clear_language"
+    print("TEST clear_language")
     lm.clear_language()
-    print "\tCurrent Languages: ", lm.current_langs_codes
-    print "\tlen(sys.path): ", len(sys.path)
-    print "\t", _("Help")
+    print("\tCurrent Languages: ", lm.current_langs_codes)
+    print("\tlen(sys.path): ", len(sys.path))
+    print("\t", _("Help"))
 
-    print "TEST set_language"
+    print("TEST set_language")
     for langcode in ["kk_KK", "z", "", "es", None, "es_AR"]:
-        print "lang: ", langcode
+        print("lang: ", langcode)
 
         lm.set_language(langcode)
-        print "\tCurrent Languages: ", lm.current_langs_codes
-        print "\tlen(sys.path): ", len(sys.path)
-        print "\t", _("Help")
+        print("\tCurrent Languages: ", lm.current_langs_codes)
+        print("\tlen(sys.path): ", len(sys.path))
+        print("\t", _("Help"))
 
     lm.clear_language()
 
-    print "TEST add_language"
+    print("TEST add_language")
     for langcode in ["kk_KK", "z", "", "es", None, "es_AR"]:
-        print "lang: ", langcode
+        print("lang: ", langcode)
 
         lm.add_language(langcode)
-        print "\tCurrent Languages: ", lm.current_langs_codes
-        print "\tlen(sys.path): ", len(sys.path)
-        print "\t", _("Help")
+        print("\tCurrent Languages: ", lm.current_langs_codes)
+        print("\tlen(sys.path): ", len(sys.path))
+        print("\t", _("Help"))
 
 if __name__ == '__main__':
     test()

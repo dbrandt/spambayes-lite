@@ -36,6 +36,7 @@ User interface improvements:
 
  o Suggestions?
 """
+from __future__ import absolute_import
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
@@ -335,7 +336,7 @@ class ProxyUserInterface(UserInterface.UserInterface):
             except ValueError:
                 max_results = 1
             key = params['find']
-            if params.has_key('ignore_case'):
+            if 'ignore_case' in params:
                 ic = True
             else:
                 ic = False
@@ -345,15 +346,15 @@ class ProxyUserInterface(UserInterface.UserInterface):
                 page = _("<p>You must enter a search string.</p>")
             else:
                 if len(keys) < max_results and \
-                   params.has_key('id'):
+                   'id' in params:
                     if state.unknownCorpus.get(key):
                         push((key, state.unknownCorpus))
                     elif state.hamCorpus.get(key):
                         push((key, state.hamCorpus))
                     elif state.spamCorpus.get(key):
                         push((key, state.spamCorpus))
-                if params.has_key('subject') or params.has_key('body') or \
-                   params.has_key('headers'):
+                if 'subject' in params or 'body' in params or \
+                   'headers' in params:
                     # This is an expensive operation, so let the user know
                     # that something is happening.
                     self.write(_('<p>Searching...</p>'))
@@ -364,18 +365,18 @@ class ProxyUserInterface(UserInterface.UserInterface):
                                 break
                             msg = corp[k]
                             msg.load()
-                            if params.has_key('subject'):
+                            if 'subject' in params:
                                 subj = str(msg['Subject'])
                                 if self._contains(subj, key, ic):
                                     push((k, corp))
-                            if params.has_key('body'):
+                            if 'body' in params:
                                 # For [ 906581 ] Assertion failed in search
                                 # subject.  Can the headers be a non-string?
                                 msg_body = msg.as_string()
                                 msg_body = msg_body[msg_body.index('\r\n\r\n'):]
                                 if self._contains(msg_body, key, ic):
                                     push((k, corp))
-                            if params.has_key('headers'):
+                            if 'headers' in params:
                                 for nm, val in msg.items():
                                     # For [ 906581 ] Assertion failed in
                                     # search subject.  Can the headers be
@@ -416,7 +417,7 @@ class ProxyUserInterface(UserInterface.UserInterface):
                             }
         invalid_keys = []
         for key in keys:
-            if isinstance(key, types.TupleType):
+            if isinstance(key, tuple):
                 key, sourceCorpus = key
             else:
                 sourceCorpus = state.unknownCorpus
@@ -560,10 +561,10 @@ class ProxyUserInterface(UserInterface.UserInterface):
         restores the defaults."""
         # Re-read the options.
         global state
-        import Options
+        from . import Options
         Options.load_options()
         global options
-        from Options import options
+        from .Options import options
 
         # Recreate the state.
         state = self.state_recreator()

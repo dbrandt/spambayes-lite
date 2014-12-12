@@ -1,4 +1,5 @@
 """Lock pickle files for reading and writing."""
+from __future__ import print_function
 
 import sys
 import os
@@ -31,9 +32,9 @@ def pickle_write(filename, value, protocol=0):
             fp = open(tmp, 'wb')
             pickle.dump(value, fp, protocol)
             fp.close()
-        except IOError, e:
+        except IOError as e:
             if options["globals", "verbose"]:
-                print >> sys.stderr, 'Failed update: ' + str(e)
+                print('Failed update: ' + str(e), file=sys.stderr)
             if fp is not None:
                 os.remove(tmp)
             raise

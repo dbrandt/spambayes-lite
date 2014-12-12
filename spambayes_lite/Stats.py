@@ -25,6 +25,7 @@ To Do:
       time data stored, it wouldn't be too bad, so maybe it can go in.
     o Suggestions?
 """
+from __future__ import print_function
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
@@ -399,4 +400,4 @@ class Stats(object):
 
 if __name__ == '__main__':
     s = Stats()
-    print "\n".join(s.GetStats())
+    print("\n".join(s.GetStats()))

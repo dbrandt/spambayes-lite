@@ -157,6 +157,7 @@ few more options, like launching the web browser automatically.
 Running `Dibbler.py` directly as a script runs the example calendar server
 plus a self-test.
 """
+from __future__ import print_function
 
 # Dibbler is released under the Python Software Foundation license; see
 # http://www.python.org/
@@ -283,7 +284,7 @@ class Listener(asyncore.dispatcher):
         try:
             self.bind(port)
         except socket.error:
-            print >> sys.stderr, "port", port, "in use"
+            print("port", port, "in use", file=sys.stderr)
             raise
         self.listen(5)
 
@@ -457,7 +458,7 @@ class _HTTPHandler(BrighterAsyncChat):
                 elif authenticationMode == HTTPServer.DIGEST_AUTHENTICATION:
                     authResult = self._digestAuthentication(login, method)
                 else:
-                    print >> sys.stderr, "Unknown mode: %s" % authenticationMode
+                    print("Unknown mode: %s" % authenticationMode, file=sys.stderr)
 
             if not authResult:
                 self.writeUnauthorizedAccess(serverAuthMode)
@@ -657,7 +658,7 @@ class _HTTPHandler(BrighterAsyncChat):
         HA2 = md5(A2).hexdigest()
 
         unhashedDigest = ""
-        if options.has_key("qop"):
+        if "qop" in options:
             # IE 6.0 doesn't give nc back correctly?
             if not options["nc"]:
                 options["nc"] = "00000001"
@@ -730,8 +731,8 @@ def run(launchBrowser=False, context=_defaultContext):
         try:
             url = "http://localhost:%d/" % context._HTTPPort
             webbrowser.open_new(url)
-        except webbrowser.Error, e:
-            print "\n%s.\nPlease point your web browser at %s." % (e, url)
+        except webbrowser.Error as e:
+            print("\n%s.\nPlease point your web browser at %s." % (e, url))
     asyncore.loop(map=context._map)
 
 
@@ -777,9 +778,9 @@ def test():
     # Connect to the server and ask for a calendar.
     page = urllib.urlopen("http://localhost:8888/?year=2003").read()
     if page.find('January') != -1:
-        print "Self test passed."
+        print("Self test passed.")
     else:
-        print "Self-test failed!"
+        print("Self-test failed!")
 
     # Wait for a key while the user plays with his browser.
     raw_input("Press any key to shut down the application server...")
@@ -787,9 +788,9 @@ def test():
     # Ask the server to shut down.
     page = urllib.urlopen("http://localhost:8888/shutdown").read()
     if page.find('OK') != -1:
-        print "Shutdown OK."
+        print("Shutdown OK.")
     else:
-        print "Shutdown failed!"
+        print("Shutdown failed!")
 
 if __name__ == '__main__':
     test()

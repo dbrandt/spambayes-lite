@@ -77,6 +77,7 @@ To Do:
 # Foundation license.
 
 from __future__ import generators
+from __future__ import print_function
 
 __author__ = "Tim Stone <tim@fourstonesExpressions.com>"
 __credits__ = "Richie Hindle, Tim Peters, all the spambayes contributors."
@@ -113,7 +114,7 @@ class Corpus:
         '''Add a Message to this corpus'''
 
         if options["globals", "verbose"]:
-            print 'adding message %s to corpus' % (message.key())
+            print('adding message %s to corpus' % (message.key()))
 
         self.cacheMessage(message)
 
@@ -129,7 +130,7 @@ class Corpus:
         '''Remove a Message from this corpus'''
         key = message.key()
         if options["globals", "verbose"]:
-            print 'removing message %s from corpus' % (key,)
+            print('removing message %s from corpus' % (key,))
         self.unCacheMessage(key)
         del self.msgs[key]
 
@@ -144,7 +145,7 @@ class Corpus:
         key = message.key()
 
         if options["globals", "verbose"]:
-            print 'placing %s in corpus cache' % (key,)
+            print('placing %s in corpus cache' % (key,))
 
         self.msgs[key] = message
 
@@ -161,7 +162,7 @@ class Corpus:
         # This method should probably not be overridden
 
         if options["globals", "verbose"]:
-            print 'Flushing %s from corpus cache' % (key,)
+            print('Flushing %s from corpus cache' % (key,))
 
         try:
             ki = self.keysInMemory.index(key)
@@ -253,7 +254,7 @@ class ExpiryCorpus:
             timestamp = msg.createTimestamp()
             if timestamp < time.time() - self.expireBefore:
                 if options["globals", "verbose"]:
-                    print 'message %s has expired' % (msg.key(),)
+                    print('message %s has expired' % (msg.key(),))
                 from spambayes.storage import NO_TRAINING_FLAG
                 self.removeMessage(msg, observer_flags=NO_TRAINING_FLAG)
             elif timestamp + self.expireBefore < self.expiry_due:
@@ -268,4 +269,4 @@ class MessageFactory(object):
 
 
 if __name__ == '__main__':
-    print >> sys.stderr, __doc__
+    print(__doc__, file=sys.stderr)

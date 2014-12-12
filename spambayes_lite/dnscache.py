@@ -42,7 +42,7 @@ class NSCache(object):
     def reverse_lookup(self, ip):
         try:
             rname = dns.reversename.from_address(ip)
-        except AttributeError, SyntaxError:
+        except AttributeError as SyntaxError:
             # Malformed in-data in some way or another.
             return ""
         try:
