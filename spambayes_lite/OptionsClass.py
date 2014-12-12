@@ -80,11 +80,7 @@ import sys
 import os
 import shutil
 from tempfile import TemporaryFile
-
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
+from io import BytesIO
 
 import re
 import types
@@ -648,7 +644,7 @@ class OptionsClass(object):
         '''Set an option.'''
         if (sect, opt.lower()) in self.conversion_table:
             sect, opt = self.conversion_table[sect, opt.lower()]
-            
+
         # Annoyingly, we have a special case.  The notate_to and
         # notate_subject allowed values have to be set to the same
         # values as the header_x_ options, but this can't be done
@@ -752,7 +748,7 @@ class OptionsClass(object):
 
     def display(self, add_comments=False):
         '''Display options in a config file form.'''
-        output = StringIO.StringIO()
+        output = BytesIO()
         keys = self._options.keys()
         keys.sort()
         currentSection = None
@@ -799,7 +795,7 @@ class OptionsClass(object):
     def display_full(self, section=None, option=None):
         '''Display options including all information.'''
         return self._display_nice(section, option, 'as_nice_string')
-        
+
     def output_for_docs(self, section=None, option=None):
         '''Return output suitable for inserting into documentation for
         the available options.'''
@@ -835,7 +831,7 @@ IMAP_FOLDER = r"[^,]+"
 #   where number represents the number of CHAR8 octets
 # but this is too complex for us at the moment.
 IMAP_ASTRING = []
-for _i in xrange(1, 128):
+for _i in range(1, 128):
     if chr(_i) not in ['"', '\\', '\n', '\r']:
         IMAP_ASTRING.append(chr(_i))
 del _i

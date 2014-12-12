@@ -25,7 +25,6 @@ import sys
 import glob
 import email
 import mailbox
-import email.Message
 import re
 import traceback
 
@@ -38,7 +37,7 @@ class DirOfTxtFileMailbox:
     on the first line, then the raw message text, then the contents of
     a plist (XML) file that contains data that Mail uses (subject,
     flags, sender, and so forth).  We ignore this plist data).
-    
+
     Subdirectories are traversed recursively.
     """
 
@@ -72,7 +71,7 @@ def full_messages(msgs):
     """
     for x in msgs:
         yield x.get_full_message()
-    
+
 def _cat(seqs):
     for seq in seqs:
         for item in seq:
@@ -115,15 +114,15 @@ def getmbox(name):
         parts = re.compile(
 ':(?P<user>[^@:]+):(?P<pwd>[^@]+)@(?P<server>[^:]+(:[0-9]+)?):(?P<name>[^:]+)'
         ).match(name).groupdict()
-        
+
         from scripts.sb_imapfilter import IMAPSession, IMAPFolder
         from spambayes import Stats, message
         from spambayes.Options import options
-        
+
         session = IMAPSession(parts['server'])
         session.login(parts['user'], parts['pwd'])
         folder_list = session.folder_list()
-        
+
         if name == "ALL":
             names = folder_list
         else:
@@ -132,12 +131,12 @@ def getmbox(name):
         message_db = message.Message().message_info_db
         stats = Stats.Stats(options, message_db)
         mboxes = [IMAPFolder(n, session, stats) for n in names]
-        
+
         if len(mboxes) == 1:
             return full_messages(mboxes[0])
         else:
             return _cat([full_messages(x) for x in mboxes])
-        
+
     if os.path.isdir(name):
         # XXX Bogus: use a Maildir if /cur is a subdirectory, else a MHMailbox
         # if the pathname contains /Mail/, else a DirOfTxtFileMailbox.
@@ -171,20 +170,20 @@ def get_message(obj):
     shouldn't matter.
     """
 
-    if isinstance(obj, email.Message.Message):
+    if isinstance(obj, email.message.Message):
         return obj
     # Create an email Message object.
     if hasattr(obj, "read"):
         obj = obj.read()
     try:
         msg = email.message_from_string(obj)
-    except email.Errors.MessageParseError:
+    except email.errors.Errors.MessageParseError:
         # Wrap the raw text in a bare Message object.  Since the
         # headers are most likely damaged, we can't use the email
         # package to parse them, so just get rid of them first.
         headers = extract_headers(obj)
         obj = obj[len(headers):]
-        msg = email.Message.Message()
+        msg = email.message.Message()
         msg.set_payload(obj)
     return msg
 

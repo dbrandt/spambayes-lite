@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import sys
 import os
-import cPickle as pickle
+import pickle
 
 import lockfile
 

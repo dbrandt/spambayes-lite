@@ -2,6 +2,7 @@
 
 from __future__ import generators
 from __future__ import print_function
+import six.moves.urllib.request as urllib2
 
 # An implementation of a Bayes-like spam classifier.
 #
@@ -48,7 +49,6 @@ import re
 import os
 import sys
 import socket
-import urllib2
 from email import message_from_string
 
 DOMAIN_AND_PORT_RE = re.compile(r"([^:/\\]+)(:([\d]+))?")

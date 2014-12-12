@@ -2,17 +2,13 @@
 """Module to tokenize email messages for spam filtering."""
 
 from __future__ import generators
+from six.moves.urllib.parse import urlparse
 
 import email
-import email.Message
-import email.Header
-import email.Utils
-import email.Errors
 import re
 import math
 import os
 import binascii
-import urlparse
 import urllib
 
 from spambayes_lite import classifier
@@ -1344,8 +1340,8 @@ class Tokenizer:
         # but real benefit to keeping case intact in this specific context.
         x = msg.get('subject', '')
         try:
-            subjcharsetlist = email.Header.decode_header(x)
-        except (binascii.Error, email.Errors.HeaderParseError, ValueError):
+            subjcharsetlist = email.header.Header.decode_header(x)
+        except (binascii.Error, email.errors.Errors.HeaderParseError, ValueError):
             subjcharsetlist = [(x, 'invalid')]
         for x, subjcharset in subjcharsetlist:
             if subjcharset is not None:
@@ -1376,11 +1372,11 @@ class Tokenizer:
                 continue
 
             noname_count = 0
-            for name, addr in email.Utils.getaddresses(addrlist):
+            for name, addr in email.utils.Utils.getaddresses(addrlist):
                 if name:
                     try:
-                        subjcharsetlist = email.Header.decode_header(name)
-                    except (binascii.Error, email.Errors.HeaderParseError,
+                        subjcharsetlist = email.header.Header.decode_header(name)
+                    except (binascii.Error, email.errors.Errors.HeaderParseError,
                             ValueError):
                         subjcharsetlist = [(name, 'invalid')]
                     for name, charset in subjcharsetlist:
@@ -1415,7 +1411,7 @@ class Tokenizer:
         if options["Tokenizer", "summarize_email_prefixes"]:
             all_addrs = []
             addresses = msg.get_all('to', []) + msg.get_all('cc', [])
-            for name, addr in email.Utils.getaddresses(addresses):
+            for name, addr in email.utils.Utils.getaddresses(addresses):
                 all_addrs.append(addr.lower())
 
             if len(all_addrs) > 1:
@@ -1442,7 +1438,7 @@ class Tokenizer:
         if options["Tokenizer", "summarize_email_suffixes"]:
             all_addrs = []
             addresses = msg.get_all('to', []) + msg.get_all('cc', [])
-            for name, addr in email.Utils.getaddresses(addresses):
+            for name, addr in email.utils.Utils.getaddresses(addresses):
                 # flip address code so following logic is the same as
                 # that for prefixes
                 addr = list(addr)
