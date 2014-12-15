@@ -1,10 +1,8 @@
 #! /usr/bin/env python
-
 '''storage.py - Spambayes database management framework.
 
 Classes:
     PickledClassifier - Classifier that uses a pickle db
-    DBDictClassifier - Classifier that uses a shelve db
     PGClassifier - Classifier that uses postgres
     mySQLClassifier - Classifier that uses mySQL
     CBDClassifier - Classifier that uses CDB
@@ -55,19 +53,21 @@ __author__ = ("Neale Pickett <neale@woozle.org>,"
               "Tim Stone <tim@fourstonesExpressions.com>")
 __credits__ = "All the spambayes contributors."
 
+import six
+
 import os
 import sys
 import time
-import types
 import tempfile
 from spambayes_lite import classifier
 from spambayes_lite.Options import options, get_pathname_option
 import errno
 import shelve
 from spambayes_lite import cdb
-from spambayes_lite import dbmstorage
 from spambayes_lite.safepickle import pickle_write, pickle_read
 from spambayes_lite.mongo_storage import MongoClassifier
+
+STATE_KEY = "saved state"
 
 # Make shelve use binary pickles by default.
 oldShelvePickler = shelve.Pickler
@@ -136,174 +136,6 @@ class PickledClassifier(classifier.Classifier):
     def close(self):
         # we keep no resources open - nothing to do
         pass
-
-# Values for our changed words map
-WORD_DELETED = "D"
-WORD_CHANGED = "C"
-
-STATE_KEY = 'saved state'
-
-class DBDictClassifier(classifier.Classifier):
-    '''Classifier object persisted in a caching database'''
-
-    def __init__(self, db_name, mode='c'):
-        '''Constructor(database name)'''
-
-        classifier.Classifier.__init__(self)
-        self.statekey = STATE_KEY
-        self.mode = mode
-        self.db_name = db_name
-        self.load()
-
-    def __repr__(self):
-        return ("DBDictClassifier(db=%s, mode=%s, nham=%d, nspam=%d)" %
-                (os.path.basename(self.db_name), self.mode, self.nham, self.nspam))
-
-    def close(self):
-        # Close our underlying database.  Better not assume all databases
-        # have close functions!
-        def noop():
-            pass
-        getattr(self.db, "close", noop)()
-        getattr(self.dbm, "close", noop)()
-        # should not be a need to drop the 'dbm' or 'db' attributes.
-        # but we do anyway, because it makes it more clear what has gone
-        # wrong if we try to keep using the database after we have closed
-        # it.
-        if hasattr(self, "db"):
-            del self.db
-        if hasattr(self, "dbm"):
-            del self.dbm
-        if options["globals", "verbose"]:
-            print('Closed', self.db_name, 'database', file=sys.stderr)
-
-    def load(self):
-        '''Load state from database'''
-
-        if options["globals", "verbose"]:
-            print('Loading state from', self.db_name, 'database', file=sys.stderr)
-
-        self.dbm = dbmstorage.open(self.db_name, self.mode)
-        self.db = shelve.Shelf(self.dbm)
-
-        if self.statekey in self.db:
-            t = self.db[self.statekey]
-            if t[0] != classifier.PICKLE_VERSION:
-                raise ValueError("Can't unpickle -- version %s unknown" % t[0])
-            (self.nspam, self.nham) = t[1:]
-
-            if options["globals", "verbose"]:
-                print(('%s is an existing database,'
-                                      ' with %d spam and %d ham') \
-                      % (self.db_name, self.nspam, self.nham), file=sys.stderr)
-        else:
-            # new database
-            if options["globals", "verbose"]:
-                print(self.db_name,'is a new database', file=sys.stderr)
-            self.nspam = 0
-            self.nham = 0
-        self.wordinfo = {}
-        self.changed_words = {} # value may be one of the WORD_ constants
-
-    def store(self):
-        '''Place state into persistent store'''
-
-        if options["globals", "verbose"]:
-            print('Persisting', self.db_name, end=' ', file=sys.stderr)
-            print('state in database', file=sys.stderr)
-
-        # Iterate over our changed word list.
-        # This is *not* thread-safe - another thread changing our
-        # changed_words could mess us up a little.  Possibly a little
-        # lock while we copy and reset self.changed_words would be appropriate.
-        # For now, just do it the naive way.
-        for key, flag in self.changed_words.iteritems():
-            if flag is WORD_CHANGED:
-                val = self.wordinfo[key]
-                self.db[key] = val.__getstate__()
-            elif flag is WORD_DELETED:
-                assert key not in self.wordinfo, \
-                       "Should not have a wordinfo for words flagged for delete"
-                # Word may be deleted before it was ever written.
-                try:
-                    del self.db[key]
-                except KeyError:
-                    pass
-            else:
-                raise RuntimeError("Unknown flag value")
-
-        # Reset the changed word list.
-        self.changed_words = {}
-        # Update the global state, then do the actual save.
-        self._write_state_key()
-        self.db.sync()
-
-    def _write_state_key(self):
-        self.db[self.statekey] = (classifier.PICKLE_VERSION,
-                                  self.nspam, self.nham)
-
-    def _post_training(self):
-        """This is called after training on a wordstream.  We ensure that the
-        database is in a consistent state at this point by writing the state
-        key."""
-        self._write_state_key()
-
-    def _wordinfoget(self, word):
-        if isinstance(word, unicode):
-            word = word.encode("utf-8")
-        try:
-            return self.wordinfo[word]
-        except KeyError:
-            ret = None
-            if self.changed_words.get(word) is not WORD_DELETED:
-                r = self.db.get(word)
-                if r:
-                    ret = self.WordInfoClass()
-                    ret.__setstate__(r)
-                    self.wordinfo[word] = ret
-            return ret
-
-    def _wordinfoset(self, word, record):
-        # "Singleton" words (i.e. words that only have a single instance)
-        # take up more than 1/2 of the database, but are rarely used
-        # so we don't put them into the wordinfo cache, but write them
-        # directly to the database
-        # If the word occurs again, then it will be brought back in and
-        # never be a singleton again.
-        # This seems to reduce the memory footprint of the DBDictClassifier by
-        # as much as 60%!!!  This also has the effect of reducing the time it
-        # takes to store the database
-        if isinstance(word, unicode):
-            word = word.encode("utf-8")
-        if record.spamcount + record.hamcount <= 1:
-            self.db[word] = record.__getstate__()
-            try:
-                del self.changed_words[word]
-            except KeyError:
-                # This can happen if, e.g., a new word is trained as ham
-                # twice, then untrained once, all before a store().
-                pass
-
-            try:
-                del self.wordinfo[word]
-            except KeyError:
-                pass
-
-        else:
-            self.wordinfo[word] = record
-            self.changed_words[word] = WORD_CHANGED
-
-    def _wordinfodel(self, word):
-        if isinstance(word, unicode):
-            word = word.encode("utf-8")
-        del self.wordinfo[word]
-        self.changed_words[word] = WORD_DELETED
-
-    def _wordinfokeys(self):
-        wordinfokeys = self.db.keys()
-        del wordinfokeys[wordinfokeys.index(self.statekey)]
-        return wordinfokeys
-
 
 class SQLClassifier(classifier.Classifier):
     def __init__(self, db_name):
@@ -392,7 +224,7 @@ class SQLClassifier(classifier.Classifier):
         return len(self.fetchall(c)) > 0
 
     def _wordinfoget(self, word):
-        if isinstance(word, unicode):
+        if isinstance(word, six.text_type):
             word = word.encode("utf-8")
 
         row = self._get_row(word)
@@ -404,12 +236,12 @@ class SQLClassifier(classifier.Classifier):
             return self.WordInfoClass()
 
     def _wordinfoset(self, word, record):
-        if isinstance(word, unicode):
+        if isinstance(word, six.text_type):
             word = word.encode("utf-8")
         self._set_row(word, record.spamcount, record.hamcount)
 
     def _wordinfodel(self, word):
-        if isinstance(word, unicode):
+        if isinstance(word, six.text_type):
             word = word.encode("utf-8")
         self._delete_row(word)
 
@@ -558,7 +390,7 @@ class mySQLClassifier(SQLClassifier):
             self.nham = 0
 
     def _wordinfoget(self, word):
-        if isinstance(word, unicode):
+        if isinstance(word, six.text_type):
             word = word.encode("utf-8")
 
         row = self._get_row(word)
@@ -601,7 +433,7 @@ class CDBClassifier(classifier.Classifier):
     def uunquote(self, s):
         for encoding in ("utf-8", "cp1252", "iso-8859-1"):
             try:
-                return unicode(s, encoding)
+                return six.text_type(s, encoding)
             except UnicodeDecodeError:
                 pass
         # punt
@@ -828,7 +660,7 @@ class ZEOClassifier(ZODBClassifier):
             if info.startswith("host"):
                 try:
                     # ZEO only accepts strings, not unicode.
-                    self.host = str(info[5:])
+                    self.host = six.text_type(info[5:])
                 except UnicodeDecodeError as e:
                     print("Couldn't set host", \
                           info[5:], str(e), file=sys.stderr)
@@ -980,8 +812,7 @@ class MutuallyExclusiveError(Exception):
 
 # values are classifier class, True if it accepts a mode
 # arg, and True if the argument is a pathname
-_storage_types = {"dbm" : (DBDictClassifier, True, True),
-                  "pickle" : (PickledClassifier, False, True),
+_storage_types = {"pickle" : (PickledClassifier, False, True),
                   "pgsql" : (PGClassifier, False, False),
                   "mysql" : (mySQLClassifier, False, False),
                   "cdb" : (CDBClassifier, False, True),
@@ -989,7 +820,7 @@ _storage_types = {"dbm" : (DBDictClassifier, True, True),
                   "zeo" : (ZEOClassifier, False, False),
                   }
 
-def open_storage(data_source_name, db_type="dbm", mode=None):
+def open_storage(data_source_name, db_type="pickle", mode=None):
     """Return a storage object appropriate to the given parameters.
 
     By centralizing this code here, all the applications will behave
@@ -999,28 +830,16 @@ def open_storage(data_source_name, db_type="dbm", mode=None):
         klass, supports_mode, unused = _storage_types[db_type]
     except KeyError:
         raise NoSuchClassifierError(db_type)
-    try:
-        if supports_mode and mode is not None:
-            return klass(data_source_name, mode)
-        else:
-            return klass(data_source_name)
-    except dbmstorage.error as e:
-        if str(e) == "No dbm modules available!":
-            # We expect this to hit a fair few people, so warn them nicely,
-            # rather than just printing the trackback.
-            print("\nYou do not have a dbm module available " \
-                  "to use.  You need to either use a pickle (see the FAQ)" \
-                  ", use Python 2.3 (or above), or install a dbm module " \
-                  "such as bsddb (see http://sf.net/projects/pybsddb).", file=sys.stderr)
-            sys.exit()
-        raise
+    if supports_mode and mode is not None:
+        return klass(data_source_name, mode)
+    else:
+        return klass(data_source_name)
 
 # The different database types that are available.
 # The key should be the command-line switch that is used to select this
 # type, and the value should be the name of the type (which
 # must be a valid key for the _storage_types dictionary).
 _storage_options = { "-p" : "pickle",
-                     "-d" : "dbm",
                      }
 
 def database_type(opts, default_type=("Storage", "persistent_use_database"),

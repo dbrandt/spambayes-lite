@@ -76,6 +76,8 @@ i.e. if multiple is None, then only one value is allowed.  Otherwise
 multiple is used in a re.split() to separate the input.
 """
 
+import six
+
 import sys
 import os
 import shutil
@@ -559,8 +561,7 @@ class OptionsClass(object):
         self.set(section, option, value)
 
     def merge_file(self, filename):
-        import ConfigParser
-        c = ConfigParser.ConfigParser()
+        c = six.moves.configparser.ConfigParser()
         c.read(filename)
         for sect in c.sections():
             for opt in c.options(sect):

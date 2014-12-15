@@ -14,7 +14,7 @@ install_requires = ["lockfile", "pymongo", "six"]
 if sys.version_info[0] == 3:
     install_requires.append("dnspython3")
 else:
-    install_requires.append("dnspython3")
+    install_requires.append("dnspython")
 
 setup(
     name='spambayes-lite',

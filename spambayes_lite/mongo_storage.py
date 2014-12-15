@@ -49,7 +49,7 @@ def replace_collection(db, collection, rebuild):
     move_collection(db, rebuild, collection)
 
 
-class MongoClassifier(object, classifier.Classifier):
+class MongoClassifier(classifier.Classifier):
     """Classifier with state persisted in MongoDB."""
 
     def __init__(self, db_url="mongodb://localhost", db_name="spambayes_lite",
@@ -61,11 +61,7 @@ class MongoClassifier(object, classifier.Classifier):
         self.load()
 
     def load(self):
-        try:
-            self.db = MongoClient(self.db_url)[self.db_name]
-        except:
-            import pdb; pdb.set_trace()
-
+        self.db = MongoClient(self.db_url)[self.db_name]
 
         state = self.db[STATE_COLLECTION].find_one(
             {"collection": self.collection_name})
