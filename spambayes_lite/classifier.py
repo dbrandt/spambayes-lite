@@ -201,7 +201,7 @@ class Classifier:
 
         if evidence:
             clues = [(w, p) for p, w, _r in clues]
-            clues.sort(lambda a, b: cmp(a[1], b[1]))
+            clues.sort(key=lambda x: x[1])
             clues.insert(0, ('*S*', S))
             clues.insert(0, ('*H*', H))
             return prob, clues
