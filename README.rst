@@ -1,4 +1,11 @@
 ==============
+THIS IS AN ABANDONED PROJECT
+==============
+The code is simply beyond fixing and maintainability. Expect it to be deleted at any time.
+
+----
+
+==============
 spambayes-lite
 ==============
 
