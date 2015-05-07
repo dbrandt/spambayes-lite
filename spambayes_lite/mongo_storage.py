@@ -75,7 +75,7 @@ class MongoClassifier(classifier.Classifier):
             self.nham = 0
             self.nspam = 0
             self.db.create_collection(self.collection_name)
-            self.db[STATE_COLLECTION].insert(
+            self.db[STATE_COLLECTION].insert_one(
                 {"collection": self.collection_name,
                  "wordinfo": self.wordinfo,
                  "nspam": self.nspam,
@@ -98,9 +98,9 @@ class MongoClassifier(classifier.Classifier):
             state = (state.get("wordinfo", {}), state.get("nspam", 0), state.get("nham", 0))
             self._set_save_state(state)
 
-    def _get_row(self, word, retclass=dict):
+    def _get_row(self, word):
         return self.db[self.collection_name].find_one(
-            {"word": word}, as_class=retclass)
+            {"word": word})
 
     def _set_row(self, word, nspam, nham):
         self.db[self.collection_name].update(
