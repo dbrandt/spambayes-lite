@@ -10,7 +10,7 @@ STATE_COLLECTION = "save_state"
 def copy_collection_js(**kwargs):
     return ("""db["%(old)s"].find().forEach(
     function (doc) {
-      db["%(new)s"].update({_id: doc._id}, doc, true);
+      db["%(new)s"].update_one({_id: doc._id}, doc, true);
     })""" % kwargs)
 
 def copy_collection(db, source, target, drop_source=False):
@@ -20,14 +20,14 @@ def copy_collection(db, source, target, drop_source=False):
     If source collection should be deleted after copy, set drop_source = True."""
     db.eval(copy_collection_js(old=source, new=target))
     source_state = db[STATE_COLLECTION].find_one({"collection": source})
-    db[STATE_COLLECTION].update({"collection": target}, {
+    db[STATE_COLLECTION].update_one({"collection": target}, {
         "collection": target,
         "nham": source_state.get("nham", 0),
         "nspam": source_state.get("nspam", 0),
         "wordinfo": source_state.get("wordinfo", {})}, True)
     if drop_source:
         print("Dropping %s after copy" % (source,))
-        db[STATE_COLLECTION].remove({"collection": source})
+        db[STATE_COLLECTION].delete_one({"collection": source})
         db[source].drop()
 
 def move_collection(db, source, target):
@@ -45,7 +45,7 @@ def replace_collection(db, collection, rebuild):
         raise RuntimeError("collection backup failed for %s (%s)" %
                            (collection, backup))
     # Truncate target collection
-    db[collection].remove()
+    db[collection].delete_many({})
     move_collection(db, rebuild, collection)
 
 
@@ -80,7 +80,7 @@ class MongoClassifier(classifier.Classifier):
                  "wordinfo": self.wordinfo,
                  "nspam": self.nspam,
                  "nham": self.nham})
-        self.db[self.collection_name].ensure_index("word")
+        self.db[self.collection_name].create_index("word")
 
     def __repr__(self):
         return ("MongoClassifier(url=%s, db=%s, collection=%s, nham=%d, nspam=%d)" %
@@ -103,12 +103,12 @@ class MongoClassifier(classifier.Classifier):
             {"word": word})
 
     def _set_row(self, word, nspam, nham):
-        self.db[self.collection_name].update(
+        self.db[self.collection_name].update_one(
             {"word": word}, {"$set": {"nspam": nspam, "nham": nham}},
             upsert=True)
 
     def _delete_row(self, word):
-        self.db[self.collection_name].remove({"word": word})
+        self.db[self.collection_name].delete_one({"word": word})
 
     def _has_key(self, key):
         return self.db[self.collection_name].find_one({"word": word}) is not None
@@ -135,7 +135,7 @@ class MongoClassifier(classifier.Classifier):
                 if "word" in r]
 
     def _set_save_state(self, state):
-        self.db[STATE_COLLECTION].update(
+        self.db[STATE_COLLECTION].update_one(
             {"collection": self.collection_name},
             {"$set":
              {"collection": self.collection_name,
